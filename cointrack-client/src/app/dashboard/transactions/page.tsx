@@ -5,12 +5,31 @@ import { Button } from '@/components/ui/button';
 import SearchButton from '@/components/transactions/SearchButton';
 import AddTransactionDialog from '@/components/transactions/AddTransactionDialog';
 import { useGetExpense, useGetTransactions } from '@/hooks/useTransaction';
-import { formatCents, formatDollars } from '@/lib/calculate-money';
+import { useGetCategories } from '@/hooks/useCategories';
+import { format, parseISO } from 'date-fns';
+import { useMemo } from 'react';
 
 export default function TransactionsPage() {
-  const { transactions = [] } = useGetTransactions();
+  const { transactions } = useGetTransactions();
+  const { categories } = useGetCategories();
   const { expense = 0 } = useGetExpense();
   const transactionsCount = transactions.length;
+
+  const groupedTransactions = useMemo(() => {
+    const grouped: Record<string, typeof transactions> = {};
+
+    transactions.forEach((transaction) => {
+      const date = parseISO(transaction.date);
+      const monthKey = format(date, 'MMMM yyyy');
+
+      if (!grouped[monthKey]) {
+        grouped[monthKey] = [];
+      }
+      grouped[monthKey].push(transaction);
+    });
+
+    return grouped;
+  }, [transactions]);
 
   return (
     <div className="h-full">
@@ -40,7 +59,6 @@ export default function TransactionsPage() {
           </Button>
         </div>
       </div>
-
       <div className="px-8 py-4 border-b border-dark-border flex items-center gap-3">
         <div className="flex items-center gap-2 px-3 py-1.5 bg-dark-surface-hover rounded-md">
           <span className="text-sm text-dark-text">Not excluded</span>
@@ -51,7 +69,6 @@ export default function TransactionsPage() {
           Add filter
         </button>
       </div>
-
       <div className="px-8 py-4 border-b border-dark-border flex items-center justify-between">
         <span className="text-sm text-dark-text-muted">
           {transactionsCount} {transactionsCount === 1 ? 'transaction' : 'transactions'}
@@ -74,45 +91,76 @@ export default function TransactionsPage() {
           </span>
         </div>
       </div>
+      <div className="px-8 py-6">
+        {transactionsCount === 0 ? (
+          <div className="text-center py-12 text-dark-text-muted">
+            <p className="text-lg">No transactions yet</p>
+            <p className="text-sm mt-2">Create your first transaction to get started</p>
+          </div>
+        ) : (
+          Object.entries(groupedTransactions).map(([month, monthTransactions]) => (
+            <div key={month} className="mb-8">
+              <h2 className="text-lg font-semibold text-dark-text mb-4">{month}</h2>
+              <div className="space-y-3">
+                {monthTransactions.map((transaction) => {
+                  const isExpense = transaction.type === 'EXPENSE';
+                  const amountInDollars = (transaction.amount / 100).toFixed(2);
+                  const category = categories.find((cat) => cat.id === transaction.categoryId);
 
-      {transactions.map((transaction) => (
-        <div key={transaction.id} className="px-8 py-6">
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-dark-text">December 2025</h2>
-              <span className="text-xl font-semibold text-dark-text">
-                ${transaction.amount.toFixed(2)}
-              </span>
-            </div>
-
-            <div className="mb-3">
-              <h3 className="text-sm text-dark-accent mb-3">Today</h3>
-
-              <div className="flex items-center justify-between p-3 hover:bg-dark-surface-hover rounded-lg cursor-pointer group">
-                <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    className="w-4 h-4 rounded border-dark-border opacity-0 group-hover:opacity-100 transition"
-                  />
-                  <div>
-                    <div className="text-dark-text font-medium">New: b m</div>
-                    <div className="text-sm text-dark-text-muted">Manual account</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2 px-3 py-1 bg-pink-900/30 rounded-full">
-                    <span className="text-base">🛍️</span>
-                    <span className="text-xs text-pink-200 font-medium">SHOPS</span>
-                  </div>
-                  <div className="text-lg font-semibold text-dark-text min-w-[100px] text-right">
-                    $322.00
-                  </div>
-                </div>
+                  return (
+                    <div
+                      key={transaction.id}
+                      className="flex items-center justify-between p-4 bg-dark-surface-hover rounded-lg border border-dark-border hover:border-dark-accent 
+                      transition-colors"
+                    >
+                      <div className="flex-1">
+                        <h3 className="font-medium text-dark-text">{transaction.name}</h3>
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          <span className="text-sm text-dark-text-muted">
+                            {format(parseISO(transaction.date), 'MMM dd, yyyy')}
+                          </span>
+                          {category && (
+                            <span
+                              className={`text-xs px-2 py-0.5 rounded-full bg-${category.color}/30 text-gray-100 border border-${category.color}/50 flex items-center gap-1`}
+                            >
+                              <span>{category.emoji}</span>
+                              <span>{category.name}</span>
+                            </span>
+                          )}
+                          <span
+                            className={`text-xs px-2 py-0.5 rounded-full ${
+                              isExpense
+                                ? 'bg-red-500/20 text-red-400'
+                                : 'bg-green-500/20 text-green-400'
+                            }`}
+                          >
+                            {transaction.type}
+                          </span>
+                        </div>
+                        {transaction.description && (
+                          <p className="text-sm text-dark-text-muted mt-1">
+                            {transaction.description}
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-right ml-4">
+                        <p
+                          className={`text-lg font-semibold ${
+                            isExpense ? 'text-red-400' : 'text-green-400'
+                          }`}
+                        >
+                          {isExpense ? '-' : '+'}${amountInDollars}
+                        </p>
+                        <p className="text-xs text-dark-text-muted">{transaction.currency}</p>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          </div>
-        </div>
-      ))}
+          ))
+        )}
+      </div>
     </div>
   );
 }

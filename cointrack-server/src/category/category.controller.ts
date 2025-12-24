@@ -31,7 +31,8 @@ export class CategoryController {
 
   @Get('get-all')
   async getUserCategories(@CurrentUserId() userId: string) {
-    return this.categoryService.getUserCategories(userId);
+    const categories = await this.categoryService.getUserCategories(userId);
+    return { categories };
   }
 
   @Get('stats')

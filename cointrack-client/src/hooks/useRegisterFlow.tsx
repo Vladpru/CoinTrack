@@ -5,7 +5,8 @@ import * as z from 'zod';
 import { registerFormSchema } from '@/types/auth.types';
 import { useAuth } from '@/hooks/useAuth';
 import { useCategories } from '@/hooks/useCategories';
-import { DEFAULT_CATEGORIES, RegisterStep } from '@/constants/categories';
+import { RegisterStep } from '@/constants/categories';
+import { CategoryType } from '@/types/category.types';
 
 const ANIMATION_DURATION = 300;
 const REDIRECT_DELAY = 1500;
@@ -72,15 +73,15 @@ export function useRegisterFlow() {
   }, [income, amount, transitionToStep]);
 
   const handleFinish = useCallback(
-    async (selectedCategories: { name: string; description: string }[]) => {
+    async (selectedCategories: CategoryType[]) => {
       if (!formData) return;
 
       setIsLoading(true);
       try {
         await register.mutateAsync({
           ...formData,
-          income: parseFloat(income),
-          amount: parseFloat(amount),
+          income: Math.round(parseFloat(income) * 100),
+          amount: Math.round(parseFloat(amount) * 100),
         });
 
         await Promise.all(

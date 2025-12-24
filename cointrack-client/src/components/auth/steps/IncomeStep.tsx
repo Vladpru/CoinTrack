@@ -22,6 +22,19 @@ export default function IncomeStep({
   onBack,
   isAnimating,
 }: IncomeStepProps) {
+  const handleNumberInput = (value: string, setter: (value: string) => void) => {
+    const regex = /^\d*\.?\d*$/;
+    if (regex.test(value) || value === '') {
+      setter(value);
+    }
+  };
+
+  const isValidNumber = (value: string) => {
+    return value !== '' && !isNaN(parseFloat(value)) && parseFloat(value) >= 0;
+  };
+
+  const canContinue = isValidNumber(income) && isValidNumber(amount);
+
   return (
     <Card
       className={`transition-all duration-300 ${isAnimating ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}
@@ -37,10 +50,10 @@ export default function IncomeStep({
           <Label htmlFor="income">Monthly Income</Label>
           <Input
             id="income"
-            type="number"
+            type="text"
             placeholder="0.00"
             value={income}
-            onChange={(e) => setIncome(e.target.value)}
+            onChange={(e) => handleNumberInput(e.target.value, setIncome)}
             min="0"
             step="0.01"
           />
@@ -49,21 +62,27 @@ export default function IncomeStep({
           <Label htmlFor="amount">Current Savings</Label>
           <Input
             id="amount"
-            type="number"
+            type="text"
             placeholder="0.00"
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={(e) => handleNumberInput(e.target.value, setAmount)}
             min="0"
             step="0.01"
           />
         </div>
         <div className="flex gap-3">
-          <Button type="button" variant="outline" onClick={onBack} className="flex-1">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onBack}
+            className="flex-1 cursor-pointer"
+          >
             Back
           </Button>
           <Button
             onClick={onSubmit}
-            className="flex-1 bg-dark-primary text-dark-text hover:bg-dark-primary-hover"
+            disabled={!canContinue}
+            className="flex-1 bg-dark-primary text-dark-text hover:bg-dark-primary-hover disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             Continue
           </Button>

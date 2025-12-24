@@ -9,11 +9,13 @@ type HeaderActionsProps = {
   isAuthenticated: boolean;
 };
 
-export default function HeaderActions({ isAuthenticated }: HeaderActionsProps) {
+export default function HeaderActions({ isAuthenticated: serverAuth }: HeaderActionsProps) {
   const router = useRouter();
-  const { hangleLogout } = useAuth();
+  const { hangleLogout, isAuthenticated, user } = useAuth();
 
-  if (isAuthenticated) {
+  const showLogout = serverAuth && isAuthenticated && user;
+
+  if (showLogout) {
     return (
       <div className="flex items-center justify-center">
         <Button

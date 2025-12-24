@@ -8,6 +8,21 @@ export class TransactionService {
   constructor(private readonly prisma: PrismaService) {}
 
   async createTransaction(dto: CreateTransactionDto, userId: string) {
+    if (dto.categoryId) {
+      const category = await this.prisma.transactionCategory.findFirst({
+        where: {
+          id: dto.categoryId,
+          userId: userId,
+        },
+      });
+
+      if (!category) {
+        throw new BadRequestException(
+          'Category not found or does not belong to user',
+        );
+      }
+    }
+
     const transaction = await this.prisma.transaction.create({
       data: {
         userId: userId,

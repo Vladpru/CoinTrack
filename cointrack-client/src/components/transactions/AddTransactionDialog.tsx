@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { format } from 'date-fns';
+import { Calendar as CalendarIcon } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -27,26 +29,29 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { CreateTransactionSchema } from '@/types/transaction.types';
+import { CreateTransactionSchema, CreateTransactionReq } from '@/types/transaction.types';
 import { useTransaction } from '@/hooks/useTransaction';
 import { useGetCategories } from '@/hooks/useCategories';
+import { validateNumber } from '@/lib/validate-amount';
+import { cn } from '@/lib/utils';
 
-type CreateTransactionInput = z.infer<typeof CreateTransactionSchema>;
-
-interface AddTransactionDialogProps {
+interface DialogProps {
   children?: React.ReactNode;
 }
 
-export default function AddTransactionDialog({ children }: AddTransactionDialogProps) {
+export default function AddTransactionDialog({ children }: DialogProps) {
   const [open, setOpen] = useState(false);
+  const [displayAmount, setDisplayAmount] = useState('');
   const { createTransaction } = useTransaction();
 
   const { categories } = useGetCategories();
 
-  const form = useForm<CreateTransactionInput>({
+  const form = useForm<CreateTransactionReq>({
     resolver: zodResolver(CreateTransactionSchema),
     defaultValues: {
       name: '',
@@ -54,11 +59,12 @@ export default function AddTransactionDialog({ children }: AddTransactionDialogP
       type: 'EXPENSE',
       description: '',
       currency: 'USD',
-      category: '',
+      categoryId: '',
+      date: new Date(Date.now()).toISOString(),
     },
   });
 
-  const onSubmit = async (data: CreateTransactionInput) => {
+  const onSubmit = async (data: CreateTransactionReq) => {
     try {
       await createTransaction.mutateAsync(data);
       setOpen(false);
@@ -108,12 +114,13 @@ export default function AddTransactionDialog({ children }: AddTransactionDialogP
                     <FormLabel className="text-dark-text">Amount</FormLabel>
                     <FormControl>
                       <Input
-                        type="number"
-                        step="0.01"
+                        type="text"
                         placeholder="0.00"
                         className="bg-dark-surface-hover border-dark-border text-dark-text"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                        value={displayAmount}
+                        onChange={(e) => {
+                          validateNumber(e.target.value, field, setDisplayAmount);
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -155,15 +162,33 @@ export default function AddTransactionDialog({ children }: AddTransactionDialogP
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-dark-text">Currency</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="USD"
-                        maxLength={3}
-                        className="bg-dark-surface-hover border-dark-border text-dark-text uppercase"
-                        {...field}
-                        onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                      />
-                    </FormControl>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="bg-dark-surface-hover border-dark-border text-dark-text">
+                          <SelectValue placeholder="Select currency" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className="bg-dark-surface border-dark-border">
+                        <SelectItem value="UAH" className="text-dark-text">
+                          UAH - Ukrainian Hryvnia
+                        </SelectItem>
+                        <SelectItem value="USD" className="text-dark-text">
+                          USD - US Dollar
+                        </SelectItem>
+                        <SelectItem value="EUR" className="text-dark-text">
+                          EUR - Euro
+                        </SelectItem>
+                        <SelectItem value="GBP" className="text-dark-text">
+                          GBP - British Pound
+                        </SelectItem>
+                        <SelectItem value="PLN" className="text-dark-text">
+                          PLN - Polish Zloty
+                        </SelectItem>
+                        <SelectItem value="CZK" className="text-dark-text">
+                          CZK - Czech Koruna
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -171,22 +196,84 @@ export default function AddTransactionDialog({ children }: AddTransactionDialogP
 
               <FormField
                 control={form.control}
-                name="category"
+                name="categoryId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-dark-text">Category</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Category (optional)"
-                        className="bg-dark-surface-hover border-dark-border text-dark-text"
-                        {...field}
-                      />
-                    </FormControl>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="bg-dark-surface-hover border-dark-border text-dark-text">
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className="bg-dark-surface border-dark-border">
+                        {Array.isArray(categories) && categories.length > 0 ? (
+                          categories.map((cat) => (
+                            <SelectItem key={cat.id} value={cat.id} className="text-dark-text">
+                              <span className="flex items-center gap-2">
+                                <span>{cat.emoji}</span>
+                                <span>{cat.name}</span>
+                              </span>
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem
+                            value="no-categories"
+                            disabled
+                            className="text-dark-text-muted"
+                          >
+                            No categories available
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="date"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel className="text-dark-text">Date</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            'w-full pl-3 text-left font-normal bg-dark-surface-hover border-dark-border text-dark-text hover:bg-dark-surface-hover hover:text-dark-text',
+                            !field.value && 'text-muted-foreground'
+                          )}
+                        >
+                          {field.value ? (
+                            format(new Date(field.value), 'PPP')
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="w-auto p-0 bg-dark-surface border-dark-border"
+                      align="start"
+                    >
+                      <Calendar
+                        mode="single"
+                        selected={field.value ? new Date(field.value) : undefined}
+                        onSelect={(date) => field.onChange(date?.toISOString() || '')}
+                        className="bg-dark-surface text-dark-text"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}

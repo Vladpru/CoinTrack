@@ -80,10 +80,16 @@ export const useAuth = () => {
     data: user,
     isLoading,
     isError,
+    error,
   } = useQuery({
     queryKey: ['profile'],
     queryFn: profileFn,
-    retry: false,
+    retry: (failureCount, error: any) => {
+      if (error?.response?.status === 401 || error?.response?.status === 404) {
+        return false;
+      }
+      return failureCount < 3;
+    },
     staleTime: 5 * 60 * 1000,
     enabled: typeof window !== 'undefined' && !!localStorage.getItem('access_token'),
   });
@@ -94,5 +100,6 @@ export const useAuth = () => {
     hangleLogout,
     user,
     isLoading,
+    isAuthenticated: !!user && !isError,
   };
 };

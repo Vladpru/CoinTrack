@@ -1,17 +1,13 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { ADDITIONAL_CATEGORIES } from '@/constants/categories';
-import { ArrowLeftIcon, X } from 'lucide-react';
-
-interface Category {
-  name: string;
-  description: string;
-}
+import { X } from 'lucide-react';
+import { CategoryType } from '@/types/category.types';
 
 interface CategoriesStepProps {
-  categories: Category[];
-  onFinish: (selectedCategories: Category[]) => void;
+  categories: CategoryType[];
+  onFinish: (selectedCategories: CategoryType[]) => void;
   isLoading: boolean;
   isAnimating: boolean;
   onBack: () => void;
@@ -24,95 +20,103 @@ export default function CategoriesStep({
   isAnimating,
   onBack,
 }: CategoriesStepProps) {
-  const [selectedCategories, setSelectedCategories] = useState<Category[]>(categories);
-  const [additionalSelected, setAdditionalSelected] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<CategoryType[]>(categories);
 
   const handleRemoveCategory = (categoryName: string) => {
-    setSelectedCategories((prev) => prev.filter((cat) => cat.name !== categoryName));
+    if (categoryName === 'Other') return;
+    setSelectedCategories((categories) => categories.filter((cat) => cat.name !== categoryName));
   };
 
-  const handleAddCategory = (categoryName: string) => {
-    if (additionalSelected.includes(categoryName)) {
-      setAdditionalSelected((prev) => prev.filter((name) => name !== categoryName));
-      setSelectedCategories((prev) => prev.filter((cat) => cat.name !== categoryName));
+  const handleAddCategory = (category: CategoryType) => {
+    const isSelected = selectedCategories.some((cat) => cat.name === category.name);
+
+    if (isSelected) {
+      setSelectedCategories((categories) => categories.filter((cat) => cat.name !== category.name));
     } else {
-      setAdditionalSelected((prev) => [...prev, categoryName]);
-      setSelectedCategories((prev) => [...prev, { name: categoryName, description: '' }]);
+      setSelectedCategories((categories) => [
+        ...categories,
+        {
+          id: category.id,
+          name: category.name,
+          emoji: category.emoji,
+          color: category.color,
+        },
+      ]);
     }
   };
 
   const isCategorySelected = (categoryName: string) => {
-    return (
-      selectedCategories.some((cat) => cat.name === categoryName) ||
-      additionalSelected.includes(categoryName)
-    );
+    return selectedCategories.some((cat) => cat.name === categoryName);
   };
 
   return (
     <Card
-      className={`pb-6 pt-0 transition-all duration-300 max-h-[80vh] overflow-y-auto ${isAnimating ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}
+      className={`pb-6 pt-0 transition-all duration-300 max-h-[80vh] overflow-y-auto ${isAnimating ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}
+         [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-900 [&::-webkit-scrollbar-thumb]:bg-gray-700 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:hover:bg-gray-600`}
     >
       <div className="sticky top-0 bg-card z-10 border-b flex justify-between items-center p-4">
         <Button
           type="button"
           variant="outline"
           onClick={onBack}
-          className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg disabled:opacity-50 px-5 py-1 cursor-pointer"
+          className="cursor-pointer px-5 py-1"
         >
-          <ArrowLeftIcon className="h-3 w-3" />
           Back
         </Button>
         <CardTitle className="text-primary text-xl">REVIEW CATEGORIES</CardTitle>
         <button
           onClick={() => onFinish(selectedCategories)}
           disabled={isLoading}
-          className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg disabled:opacity-50 px-5 py-1 cursor-pointer"
+          className="bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-md disabled:opacity-50 px-5 py-1 cursor-pointer"
         >
           Done
         </button>
       </div>
       <CardContent className="space-y-8">
         <div className="space-y-4">
-          <h3 className="text-xl font-semibold">Suggested categories</h3>
+          <h3 className="text-xl font-semibold">Selected categories</h3>
           <div className="flex flex-wrap gap-3">
-            {selectedCategories.slice(0, 6).map((category) => (
-              <button
-                key={category.name}
-                onClick={() => handleRemoveCategory(category.name)}
-                className="px-4 py-2 rounded-full bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 font-medium flex items-center gap-2 transition-colors"
-              >
-                {category.name}
-                <X className="w-4 h-4" />
-              </button>
-            ))}
+            {selectedCategories.map((category) => {
+              const isOther = category.name === 'Other';
+              return (
+                <button
+                  key={category.name}
+                  className={`px-4 py-2 rounded-full font-medium flex items-center gap-2 transition-colors ${
+                    isOther
+                      ? 'bg-purple-500/10 text-gray-400 cursor-not-allowed'
+                      : 'bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 cursor-pointer'
+                  }`}
+                  onClick={() => handleRemoveCategory(category.name)}
+                  disabled={isOther}
+                >
+                  {category.name} <span>{category.emoji}</span>
+                  {!isOther && <X className="w-4 h-4" />}
+                </button>
+              );
+            })}
           </div>
         </div>
 
         <div className="space-y-4">
-          <h3 className="text-xl font-semibold mb-2">Additional categories</h3>
+          <h3 className="text-xl font-semibold mb-2">Recommended categories</h3>
           <div className="flex flex-wrap gap-3">
-            {ADDITIONAL_CATEGORIES.map((category) => (
+            {ADDITIONAL_CATEGORIES.map((category, index) => (
               <button
-                key={category.name}
-                onClick={() => handleAddCategory(category.name)}
+                key={index}
+                onClick={() => handleAddCategory({ id: category.name, ...category })}
                 disabled={isCategorySelected(category.name)}
-                className={`px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2 transition-colors ${
+                className={`px-4 py-2 rounded-full text-base font-medium flex items-center gap-2 transition-colors ${
                   isCategorySelected(category.name)
-                    ? 'bg-gray-700/50 text-gray-500 cursor-not-allowed'
+                    ? 'bg-gray-700/50 text-gray-500 cursor-not-allowed font-normal'
                     : 'bg-gray-700/30 hover:bg-gray-700/50 text-gray-300'
                 }`}
               >
                 <span>{category.emoji}</span>
-                {category.name.toUpperCase()}
+                {category.name}
               </button>
             ))}
           </div>
         </div>
-
-        <button className="w-full py-3 border-2 border-dashed border-gray-600 rounded-lg text-gray-400 hover:text-gray-300 hover:border-gray-500 transition-colors flex items-center justify-center gap-2">
-          <span className="text-2xl">+</span>
-          Add category
-        </button>
       </CardContent>
     </Card>
   );

@@ -14,7 +14,10 @@ export class AccessTokenStrategy extends PassportStrategy(
   Strategy,
   'jwt-access',
 ) {
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly userService: UserService,
+  ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
 
@@ -24,7 +27,13 @@ export class AccessTokenStrategy extends PassportStrategy(
     });
   }
 
-  async validate(user: JwtPayload) {
-    return { id: user.sub, email: user.email };
+  async validate(payload: JwtPayload) {
+    const user = await this.userService.getUserById(payload.sub);
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    return { id: user.id, email: user.email };
   }
 }

@@ -15,7 +15,8 @@ export const CreateTransactionSchema = z.object({
     .string({ error: 'Currency is required' })
     .trim()
     .length(3, 'Currency must be a 3-letter ISO code'),
-  category: z.string().trim().optional(),
+  categoryId: z.string().trim().optional(),
+  date: z.string({ error: 'Date is required' }).min(1, 'Date is required'),
 });
 
 export const UpdateTransactionSchema = z.object({
@@ -38,7 +39,8 @@ export const UpdateTransactionSchema = z.object({
     .trim()
     .length(3, 'Currency must be a 3-letter ISO code')
     .optional(),
-  category: z.string().trim().optional(),
+  categoryId: z.string().trim().optional(),
+  date: z.string().optional(),
 });
 
 export interface transactionRes {
@@ -53,7 +55,8 @@ export interface ITransaction {
   type: 'INCOME' | 'EXPENSE';
   description: string;
   currency: string;
-  category: string;
+  categoryId: string | null;
+  date: string;
 }
 
 export type CreateTransactionReq = z.infer<typeof CreateTransactionSchema>;

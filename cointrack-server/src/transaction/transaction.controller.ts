@@ -7,6 +7,7 @@ import {
   UseGuards,
   Body,
   Param,
+  BadRequestException,
 } from '@nestjs/common';
 import { TransactionService } from './transaction.service';
 import { AccessTokenGuard } from 'src/auth/guards/access-jwt.guard';
@@ -50,7 +51,9 @@ export class TransactionController {
 
   @Get('')
   async getUserTransactions(@CurrentUserId() userId: string) {
-    return this.transactionService.getUserTransactions(userId);
+    const transactions =
+      await this.transactionService.getUserTransactions(userId);
+    return transactions;
   }
 
   @Get('get/:transactionId')

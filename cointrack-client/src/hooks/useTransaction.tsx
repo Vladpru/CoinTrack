@@ -61,7 +61,7 @@ export const useGetTransactions = () => {
   } = useQuery<{ transactions: ITransaction[] }, Error, ITransaction[]>({
     queryKey: ['transactions'],
     queryFn: () => getTransactionsFn(),
-    select: (data) => data?.transactions || [],
+    select: (data) => (Array.isArray(data) ? data : []),
   });
 
   return {
@@ -76,11 +76,17 @@ export const useGetExpense = () => {
     data: expense,
     isLoading,
     isError,
+    error,
   } = useQuery({
     queryKey: ['expense'],
     queryFn: getMoneySpend,
     select: (data) => data?.money || 0,
-    retry: false,
+    retry: (failureCount, error: any) => {
+      if (error?.response?.status === 401 || error?.response?.status === 404) {
+        return false;
+      }
+      return failureCount < 3;
+    },
     staleTime: 5 * 60 * 1000,
   });
 
@@ -88,5 +94,6 @@ export const useGetExpense = () => {
     expense,
     isLoading,
     isError,
+    error,
   };
 };

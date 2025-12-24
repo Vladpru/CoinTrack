@@ -26,7 +26,8 @@ export class CategoryService {
     return await this.prisma.transactionCategory.create({
       data: {
         name: dto.name,
-        description: dto.description,
+        emoji: dto.emoji,
+        color: dto.color,
         userId: userId,
       },
     });
@@ -35,13 +36,13 @@ export class CategoryService {
   async getUserCategories(userId: string) {
     return await this.prisma.transactionCategory.findMany({
       where: { userId: userId },
-      include: {
-        _count: {
-          select: {
-            transactions: true,
-          },
-        },
-      },
+      // include: {
+      //   _count: {
+      //     select: {
+      //       transactions: true,
+      //     },
+      //   },
+      // },
       orderBy: { name: 'asc' },
     });
   }

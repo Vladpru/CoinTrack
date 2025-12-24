@@ -1,6 +1,10 @@
 'use client';
 
-import { createCategoryFn, getCategoriesFn } from '@/services/category.service.api';
+import {
+  createCategoryFn,
+  getCategoriesFn,
+  getCategoryById,
+} from '@/services/category.service.api';
 import {
   createTransactionFn,
   deleteTransactionFn,
@@ -41,7 +45,6 @@ export const useGetCategories = () => {
     queryFn: () => getCategoriesFn(),
     select: (data) => data?.categories || [],
   });
-
   return {
     categories,
     isLoading,

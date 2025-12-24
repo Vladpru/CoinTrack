@@ -7,11 +7,16 @@ export const createCategoryFn = async (categoryData: CategoryType) => {
 };
 
 export const getCategoriesFn = async () => {
-  const response = await appApi.get<{ categories: CategoryType[] }>('get-all');
+  const response = await appApi.get<{ categories: CategoryType[] }>('category/get-all');
   return response.data;
 };
 
 export const deleteCategoryFn = async (categoryId: string) => {
   const response = await appApi.delete<CategoryType>(`category/${categoryId}`);
+  return response.data;
+};
+
+export const getCategoryById = async (categoryId: string) => {
+  const response = await appApi.get<CategoryType>(`get/${categoryId}`);
   return response.data;
 };

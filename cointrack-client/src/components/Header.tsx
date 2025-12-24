@@ -1,7 +1,4 @@
 'use server';
-import { Waves } from 'lucide-react';
-import React from 'react';
-import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import HeaderActions from './HeaderActions';
 import { cookies } from 'next/headers';

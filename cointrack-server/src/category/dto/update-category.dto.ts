@@ -8,6 +8,9 @@ export class UpdateCategoryDto {
 
   @IsOptional()
   @IsString()
-  @MaxLength(255, { message: 'Description must not exceed 255 characters' })
-  description?: string;
+  emoji: string;
+
+  @IsOptional()
+  @IsString()
+  color: string;
 }

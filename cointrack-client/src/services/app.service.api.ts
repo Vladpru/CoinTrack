@@ -1,5 +1,5 @@
 import axios, { AxiosError } from 'axios';
-import { refreshTokenFn } from './auth.service.api';
+import { logoutFn, refreshTokenFn } from './auth.service.api';
 
 export const appApi = axios.create({
   baseURL: 'http://localhost:5000',
@@ -42,7 +42,6 @@ appApi.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as any;
 
-    // Не робимо refresh для auth endpoints (login, register, refresh)
     const isAuthEndpoint =
       originalRequest.url?.includes('/auth/login') ||
       originalRequest.url?.includes('/auth/register') ||
@@ -50,7 +49,6 @@ appApi.interceptors.response.use(
 
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       if (isRefreshing) {
-        // Додаємо в чергу якщо вже виконується refresh
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
@@ -86,7 +84,6 @@ appApi.interceptors.response.use(
 
         localStorage.removeItem('access_token');
 
-        // Редіректимо тільки якщо не на login сторінці
         if (
           typeof window !== 'undefined' &&
           !window.location.pathname.includes('/login') &&
@@ -98,6 +95,23 @@ appApi.interceptors.response.use(
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
+      }
+    }
+
+    if (
+      (error.response?.status === 401 || error.response?.status === 404) &&
+      (error.response?.data as any)?.message?.includes('User not found')
+    ) {
+      console.error('User not found in database');
+
+      await logoutFn();
+
+      if (
+        typeof window !== 'undefined' &&
+        !window.location.pathname.includes('/login') &&
+        !window.location.pathname.includes('/register')
+      ) {
+        window.location.href = '/login';
       }
     }
 

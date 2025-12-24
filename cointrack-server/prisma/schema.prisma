@@ -56,7 +56,8 @@ model Transaction {
 model TransactionCategory {
   id             String    @id @default(uuid())
   name           String    @db.VarChar(100)
-  description    String?   @db.VarChar(255)
+  emoji          String   @db.VarChar(255)
+  color          String   @db.VarChar(255)
   
   userId String @map("user_id")
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

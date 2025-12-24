@@ -1,17 +1,11 @@
-import React from 'react';
+'use client';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useGetCategories } from '@/hooks/useCategories';
 
 export default function CategoriesPage() {
-  const regularCategories = [
-    { icon: '🛍️', name: 'Shops', spent: 322, budget: 100 },
-    { icon: '💛', name: 'Donations', spent: 0, budget: 100 },
-    { icon: '🥬', name: 'Groceries', spent: 0, budget: 100 },
-    { icon: '🩺', name: 'Healthcare', spent: 0, budget: 100 },
-    { icon: '💰', name: 'Loans', spent: 0, budget: 100 },
-    { icon: '🎯', name: 'Other', spent: 0, budget: 0 },
-  ];
+  const { categories } = useGetCategories();
 
   const excludedCategories = [{ icon: '💼', name: 'Work Expenses', spent: 0, budget: 0 }];
 
@@ -25,7 +19,6 @@ export default function CategoriesPage() {
         </Button>
       </div>
 
-      {/* Summary Card */}
       <Card className="bg-dark-surface border-dark-border mb-8">
         <CardContent className="p-8">
           <div className="flex items-center justify-between">
@@ -61,7 +54,6 @@ export default function CategoriesPage() {
         </CardContent>
       </Card>
 
-      {/* Regular Categories */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-dark-text-muted">Regular categories</h2>
@@ -72,11 +64,11 @@ export default function CategoriesPage() {
         </div>
 
         <div className="bg-dark-surface rounded-lg border border-dark-border overflow-hidden">
-          {regularCategories.map((category, index) => (
+          {categories.map((category, index) => (
             <div
               key={category.name}
               className={`flex items-center justify-between p-4 hover:bg-dark-surface-hover transition cursor-pointer ${
-                index !== regularCategories.length - 1 ? 'border-b border-dark-border' : ''
+                index !== categories.length - 1 ? 'border-b border-dark-border' : ''
               }`}
             >
               <div className="flex items-center gap-4 flex-1">
@@ -105,7 +97,6 @@ export default function CategoriesPage() {
         </div>
       </div>
 
-      {/* Excluded Categories */}
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-dark-text-muted">Excluded categories</h2>

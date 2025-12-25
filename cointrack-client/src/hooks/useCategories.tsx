@@ -4,6 +4,7 @@ import {
   createCategoryFn,
   getCategoriesFn,
   getCategoryById,
+  getTopCategories,
 } from '@/services/category.service.api';
 import {
   createTransactionFn,
@@ -12,7 +13,7 @@ import {
   getTransactionsFn,
   updateTransactionFn,
 } from '@/services/transaction.service.api';
-import { CategoryType } from '@/types/category.types';
+import { CategoryType, TopCategoryResponse } from '@/types/category.types';
 import { transactionRes, ITransaction } from '@/types/transaction.types';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -43,6 +44,23 @@ export const useGetCategories = () => {
   } = useQuery<{ categories: CategoryType[] }, Error, CategoryType[]>({
     queryKey: ['categories'],
     queryFn: () => getCategoriesFn(),
+    select: (data) => data?.categories || [],
+  });
+  return {
+    categories,
+    isLoading,
+    isError,
+  };
+};
+
+export const useGetTopCategories = () => {
+  const {
+    data: categories = [],
+    isLoading,
+    isError,
+  } = useQuery<{ categories: TopCategoryResponse[] }, Error, TopCategoryResponse[]>({
+    queryKey: ['categories'],
+    queryFn: () => getTopCategories(),
     select: (data) => data?.categories || [],
   });
   return {

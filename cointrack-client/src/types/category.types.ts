@@ -11,4 +11,9 @@ export const CategorySchema = z.object({
   color: z.string(),
 });
 
+export const TopCategorySchema = CategorySchema.extend({
+  amount: z.number(),
+});
+
 export type CategoryType = z.infer<typeof CategorySchema>;
+export type TopCategoryResponse = z.infer<typeof TopCategorySchema>;

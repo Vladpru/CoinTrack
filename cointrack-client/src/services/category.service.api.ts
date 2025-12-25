@@ -1,5 +1,5 @@
 import { appApi } from './app.service.api';
-import { CategoryType } from '@/types/category.types';
+import { CategoryType, TopCategoryResponse } from '@/types/category.types';
 
 export const createCategoryFn = async (categoryData: CategoryType) => {
   const response = await appApi.post<CategoryType>('category', categoryData);
@@ -18,5 +18,12 @@ export const deleteCategoryFn = async (categoryId: string) => {
 
 export const getCategoryById = async (categoryId: string) => {
   const response = await appApi.get<CategoryType>(`get/${categoryId}`);
+  return response.data;
+};
+
+export const getTopCategories = async () => {
+  const response = await appApi.get<{ categories: TopCategoryResponse[] }>(
+    'category/top-categories'
+  );
   return response.data;
 };

@@ -65,4 +65,10 @@ export class CategoryController {
   ) {
     return this.categoryService.deleteCategory(categoryId, userId);
   }
+
+  @Get('top-categories')
+  async TopCategories(@CurrentUserId() userId: string) {
+    const categories = await this.categoryService.getTopCategories(userId);
+    return { categories };
+  }
 }

@@ -136,4 +136,47 @@ export class CategoryService {
       },
     });
   }
+
+  async getTopCategories(userId: string) {
+    const groupedTransactions = await this.prisma.transaction.groupBy({
+      by: ['categoryId'],
+      where: {
+        userId,
+        type: 'EXPENSE',
+        categoryId: { not: null },
+      },
+      _sum: {
+        amount: true,
+      },
+      orderBy: {
+        _sum: {
+          amount: 'desc',
+        },
+      },
+      take: 5,
+    });
+
+    if (groupedTransactions.length === 0) return [];
+
+    const categoryIds = groupedTransactions
+      .map((t) => t.categoryId)
+      .filter((id): id is string => id !== null);
+
+    const categories = await this.prisma.transactionCategory.findMany({
+      where: { id: { in: categoryIds } },
+    });
+
+    const categoryMap = new Map(categories.map((c) => [c.id, c]));
+
+    return groupedTransactions.map((group) => {
+      const category = categoryMap.get(group.categoryId as string);
+      return {
+        id: category?.id,
+        name: category?.name,
+        emoji: category?.emoji,
+        color: category?.color,
+        amount: group._sum.amount,
+      };
+    });
+  }
 }
